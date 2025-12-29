@@ -57,4 +57,26 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+    public function store(Request $request)
+{
+    // Pastikan service_id diterima sebagai array (karena pilih banyak)
+    $request->validate([
+        'service_id' => 'required|array',
+        'service_id.*' => 'exists:services,id',
+    ]);
+
+    // AMBIL HARGA DARI DATABASE & JUMLAHKAN
+    $totalPrice = \App\Models\Service::whereIn('id', $request->service_id)->sum('price');
+
+    // SIMPAN KE TABEL PESANAN
+    \App\Models\ServiceOrder::create([
+        'user_id'      => $request->user_id,
+        'plate_number' => $request->plate_number,
+        'total_price'  => $totalPrice, // Nilai ini sekarang akan akurat
+        'status'       => 'pending',
+        'service_date' => $request->service_date,
+    ]);
+
+    return redirect()->back()->with('success', 'Antrean berhasil dibuat!');
+}
 }

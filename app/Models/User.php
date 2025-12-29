@@ -50,9 +50,10 @@ class User extends Authenticatable
      * Relasi ke model Customer
      * Menghubungkan akun login dengan data pelanggan bengkel
      */
-    public function customer()
-    {
-        return $this->hasOne(customers::class, 'user_id');
-    }
+    public function vehicles()
+{
+    // Dari hasOne menjadi hasMany agar bisa punya banyak kendaraan
+    return $this->hasMany(Vehicle::class);
+}
     
 }

@@ -2,74 +2,54 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\services; // Pastikan nama model di folder Models memang 'services' (huruf kecil & jamak)
 use Illuminate\Http\Request;
+use App\Models\Service;
 
 class ServicesController extends Controller
 {
+    /**
+     * Menampilkan daftar semua master layanan yang ada di database.
+     */
     public function index()
     {
-        $services = services::all(); 
+        $services = Service::all();
         return view('services.index', compact('services'));
     }
 
+    /**
+     * Menampilkan form untuk menambah jenis layanan baru.
+     */
     public function create()
     {
         return view('services.create');
     }
 
+    /**
+     * Menyimpan master layanan baru (Nama Jasa & Harga).
+     * Fokus fitur ini adalah input layanan yang nantinya dipilih customer.
+     */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name'  => 'required|string|max:255',
-            'price' => 'required|integer|min:0',
+        // 1. Validasi input: Pastikan nama ada dan harga adalah angka
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric',
         ]);
 
-        services::create($data);
+        // 2. Simpan data ke tabel services
+        // Pastikan model Service sudah memiliki properti $fillable = ['name', 'price']
+        Service::create($validated);
 
-        return redirect()
-            ->route('services.index')
-            ->with('success', 'Layanan berhasil ditambahkan.');
+        // 3. Kembali ke halaman create dengan pesan sukses
+        return redirect()->route('services.create')->with('success', 'Master layanan berhasil ditambahkan ke sistem!');
     }
 
     /**
-     * REVISI DI SINI:
-     * Nama parameter diubah jadi $service (tunggal) agar sinkron dengan compact
+     * Opsional: Menghapus master layanan
      */
-    public function edit(services $service) 
-    {
-        // Parameter di atas adalah $service, maka compact-nya harus 'service'
-        return view('services.edit', compact('service'));
-    }
-
-    /**
-     * REVISI DI SINI:
-     * Nama parameter disamakan jadi $service (tunggal) agar konsisten
-     */
-    public function update(Request $request, Services $service)
-{
-    // 1. Update data layanan itu sendiri
-    $service->update($request->all());
-
-    // 2. LOGIKA TAMBAHAN: Update harga di order yang masih PENDING
-    // Agar harga di riwayat ikut terbaru
-    \App\Models\ServiceOrder::where('service_id', $service->id)
-        ->where('status', 'pending')
-        ->update(['total' => $service->price]);
-
-    return redirect()->route('services.index')->with('success', 'Harga layanan diperbarui!');
-}
-
-    /**
-     * REVISI DI SINI:
-     * Nama parameter disamakan jadi $service
-     */
-    public function destroy(services $service)
+    public function destroy(Service $service)
     {
         $service->delete();
-
-        return redirect()
-            ->route('services.index')
-            ->with('success', 'Layanan berhasil dihapus.');
+        return redirect()->route('services.index')->with('success', 'Layanan berhasil dihapus.');
     }
 }

@@ -2,84 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ServiceOrder;
-use App\Models\customers;
-use App\Models\Services;
 use Illuminate\Http\Request;
+use App\Models\Service;
+use App\Models\ServiceOrder;
+use App\Models\Customer;
 
 class ServiceOrderController extends Controller
 {
-    public function index()
-    {
-        $orders = ServiceOrder::with(['customer', 'service'])->latest()->get();
-        return view('orders.index', compact('orders'));
+    public function index(Request $request)
+{
+    // Mengambil data order beserta data pelanggannya
+    $query = ServiceOrder::with('customer'); 
+
+    if ($request->search) {
+        $query->where('plate_number', 'like', "%{$request->search}%");
     }
+
+    $orders = $query->latest()->get();
+    
+    // Dibutuhkan untuk menampilkan nama layanan di kolom 'Detail'
+    $allServices = Service::all()->keyBy('id');
+
+    return view('orders.index', compact('orders', 'allServices'));
+}
 
     public function create()
     {
-        $customers = customers::orderBy('name')->get();
-        $services = Services::orderBy('name')->get();
-        return view('orders.create', compact('customers', 'services'));
+        $services = Service::all();
+        $allServices = $services->keyBy('id'); // Agar create.blade tidak error
+        $customers = Customer::all();
+
+        return view('orders.create', compact('services', 'allServices', 'customers'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'customer_id'  => 'required|exists:customers,id',
-            'service_id'   => 'required|exists:services,id',
-            'service_date' => 'required|date',
-            'status'       => 'required|in:pending,done',
-            'plate_number' => 'required|string|max:20',
-        ]);
-
-        $service = Services::findOrFail($request->service_id);
+        $total = 0;
+        // Menghitung total harga layanan yang dipilih
+        foreach ($request->service_id as $id) {
+            $service = Service::find($id);
+            if ($service) { $total += $service->price; }
+        }
 
         ServiceOrder::create([
-            'customers_id' => $request->customer_id, 
-            'service_id'   => $request->service_id, 
-            'service_date' => $request->service_date,
-            'status'       => $request->status,
-            'total'        => $service->price,
-            'plate_number' => $request->plate_number,
+            'customer_id'  => $request->customer_id,
+            'plate_number' => implode(', ', $request->plate_number),
+            'service_id'   => implode(', ', $request->service_id),
+            'total'        => $total,
+            'status'       => 'pending',
+            'service_date' => $request->service_date ?? now(),
         ]);
 
-        return redirect()->route('orders.index')->with('success', 'Order berhasil dibuat!');
-    }
-
-    public function edit(ServiceOrder $order)
-    {
-        $customers = customers::orderBy('name')->get();
-        $services = Services::orderBy('name')->get();
-        return view('orders.edit', compact('order', 'customers', 'services'));
-    }
-
-    public function update(Request $request, ServiceOrder $order)
-    {
-        $request->validate([
-            'customer_id'  => 'required|exists:customers,id',
-            'service_id'   => 'required|exists:services,id',
-            'service_date' => 'required|date',
-            'status'       => 'required|in:pending,done',
-            'plate_number' => 'required|string|max:20',
-        ]);
-
-        $service = Services::findOrFail($request->service_id);
-
-        $order->update([
-            'customers_id' => $request->customer_id,
-            'service_id'   => $request->service_id,
-            'service_date' => $request->service_date,
-            'status'       => $request->status,
-            'total'        => $service->price,
-            'plate_number' => $request->plate_number,
-        ]);
-
-        return redirect()->route('orders.index')->with('success', 'Order diperbarui!');
+        return redirect()->route('orders.index')->with('success', 'Order berhasil!');
     }
 
     public function destroy(ServiceOrder $order)
     {
         $order->delete();
-        return redirect()->route('orders.index')->with('success', 'Order dihapus.');
+        return back();
     }
 }

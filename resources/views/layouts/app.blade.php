@@ -4,24 +4,40 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>SIMB | Modern Dashboard</title>
+    <title>{{ config('app.name', 'SIMB') }} | Modern Dashboard</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
-<body class="h-full antialiased text-slate-900 overflow-x-hidden">
-    <div class="min-h-screen flex">
+<body class="h-full antialiased text-slate-900 overflow-x-hidden" x-data="{ sidebarOpen: true }" x-cloak>
+    <div class="min-h-screen flex relative">
+        
         {{-- Sidebar --}}
-        <aside class="hidden lg:flex lg:w-72 lg:flex-col fixed inset-y-0 bg-slate-900 shadow-2xl z-50">
+        <aside 
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            class="sidebar-transition fixed inset-y-0 left-0 w-72 bg-slate-900 shadow-2xl z-50 flex flex-col">
+            
             <div class="flex flex-col flex-grow pt-8 overflow-y-auto">
-                <div class="flex items-center flex-shrink-0 px-8 mb-10">
-                    <div class="w-8 h-8 bg-indigo-500 rounded-lg mr-3 shadow-lg shadow-indigo-500/50"></div>
-                    <span class="text-xl font-black text-white tracking-tighter italic">SIM<span class="text-indigo-400 font-light">BENGKEL</span></span>
+                <div class="flex items-center justify-between px-8 mb-10">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-indigo-500 rounded-lg mr-3 shadow-lg shadow-indigo-500/50"></div>
+                        <span class="text-xl font-black text-white tracking-tighter italic">SIM<span class="text-indigo-400 font-light">BENGKEL</span></span>
+                    </div>
+                    <button @click="sidebarOpen = false" class="lg:hidden text-slate-400">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
                 </div>
                 
                 <nav class="flex-1 px-4 space-y-1">
@@ -46,16 +62,24 @@
         </aside>
 
         {{-- Main Content --}}
-        <div class="flex flex-col flex-1 lg:pl-72 w-full min-w-0">
+        <div 
+            :class="sidebarOpen ? 'lg:pl-72' : 'lg:pl-0'"
+            class="sidebar-transition flex flex-col flex-1 w-full min-w-0">
+            
             <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-20 flex items-center justify-between px-8">
-                <h2 class="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">
-                    @isset($header) {{ $header }} @else Overview Dashboard @endisset
-                </h2>
+                <div class="flex items-center gap-6">
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-slate-600 hover:text-indigo-600 transition-colors p-2 bg-slate-50 rounded-xl">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                    
+                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">
+                        @isset($header) {{ $header }} @else Overview Dashboard @endisset
+                    </h2>
+                </div>
                 @include('layouts.navigation')
             </header>
 
-            {{-- REVISI DISINI: Overflow hidden di main agar table bisa scroll di dalam --}}
-            <main class="py-10 px-4 md:px-8 w-full overflow-hidden">
+            <main class="py-10 px-4 md:px-8 w-full">
                 <div class="max-w-[1400px] mx-auto">
                     {{ $slot }}
                 </div>
