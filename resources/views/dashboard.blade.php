@@ -24,7 +24,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
             {{-- ========================================== --}}
-            {{-- TAMPILAN UNTUK ADMIN --}}
+            {{-- TAMPILAN UNTUK ADMIN (ORIGINAL - NO CHANGE) --}}
             {{-- ========================================== --}}
             @if(Auth::user()->role == 'admin')
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -92,17 +92,23 @@
                                 <h3 class="text-3xl font-black italic uppercase tracking-tighter">Halo, {{ Auth::user()->name }}!</h3>
                                 <p class="mt-2 text-indigo-100 font-medium opacity-80">Pantau perkembangan servis kendaraan Anda.</p>
                                 
-                                <div class="mt-8 flex items-center gap-4">
-                                    <div class="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10">
-                                        <p class="text-[9px] uppercase font-black text-indigo-200 mb-1">Status Terakhir</p>
-                                        <div class="flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full animate-pulse bg-emerald-400"></span>
-                                            <p class="text-lg font-bold italic uppercase tracking-tight">{{ $myOrders->first()->status ?? 'Belum Ada Servis' }}</p>
+                                <div class="mt-8 flex flex-wrap gap-4">
+                                    @forelse($myOrders->whereIn('status', ['pending', 'proses']) as $ongoing)
+                                        <div class="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10">
+                                            <p class="text-[9px] uppercase font-black text-indigo-200 mb-1">Status {{ $ongoing->plate_number }}</p>
+                                            <div class="flex items-center gap-2">
+                                                <span class="w-2 h-2 rounded-full animate-pulse bg-amber-400"></span>
+                                                <p class="text-lg font-bold italic uppercase tracking-tight">PROSES</p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    @empty
+                                        <div class="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10">
+                                            <p class="text-lg font-bold italic uppercase tracking-tight italic">Semua unit sudah siap!</p>
+                                        </div>
+                                    @endforelse
                                 </div>
                             </div>
-                            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/5 rounded-full group-hover:scale-110 transition-transform duration-700"></div>
+                            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/5 rounded-full"></div>
                         </div>
 
                         {{-- Riwayat --}}
@@ -112,24 +118,23 @@
                                 Riwayat Servis
                             </h3>
                             <div class="space-y-4">
-                                @forelse($myOrders ?? [] as $order)
+                                @forelse($myOrders->where('status', 'done') as $order)
                                     <div class="group flex items-center justify-between p-5 bg-slate-50 hover:bg-white hover:shadow-md transition-all rounded-3xl border border-transparent hover:border-slate-100">
                                         <div class="flex items-center gap-4">
-                                            <div class="w-12 h-12 flex items-center justify-center rounded-2xl {{ strtolower($order->status) == 'done' ? 'bg-emerald-50 text-emerald-500' : 'bg-amber-50 text-amber-500' }}">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2"/></svg>
+                                            <div class="w-12 h-12 flex items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"/></svg>
                                             </div>
                                             <div>
-                                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $order->service_date }}</p>
+                                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $order->service_date }} • {{ $order->plate_number }}</p>
                                                 <p class="font-black text-slate-800 italic uppercase">{{ $order->service->name ?? 'Servis' }}</p>
                                             </div>
                                         </div>
-                                        <span class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm {{ strtolower($order->status) == 'done' ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-white' }}">
-                                            {{ $order->status }}
+                                        <span class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500 text-white">
+                                            SELESAI
                                         </span>
                                     </div>
                                 @empty
                                     <div class="text-center py-12">
-                                        <div class="text-4xl mb-2 text-slate-200">☹</div>
                                         <p class="text-slate-400 italic font-bold uppercase text-xs tracking-widest">Belum ada riwayat servis</p>
                                     </div>
                                 @endforelse
@@ -140,17 +145,19 @@
                     {{-- Sidebar Info --}}
                     <div class="space-y-6">
                         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 ring-1 ring-slate-900/5">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 border-b border-slate-50 pb-4">Data Kendaraan</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 border-b border-slate-50 pb-4">Unit Dalam Bengkel</p>
                             <div class="space-y-8">
-                                <div class="relative">
-                                    <label class="text-[10px] font-bold text-indigo-400 uppercase italic block mb-1">Plat Nomor</label>
-                                    <p class="text-3xl font-black text-slate-800 italic uppercase tracking-tighter">{{ Auth::user()->customer->plate_number ?? '-' }}</p>
-                                    <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full"></div>
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-400 uppercase italic block mb-1">WhatsApp Terdaftar</label>
-                                    <p class="text-lg font-bold text-slate-700">{{ Auth::user()->customer->phone ?? '-' }}</p>
-                                </div>
+                                @forelse($myOrders->whereIn('status', ['pending', 'proses']) as $item)
+                                    <div class="relative pl-4 border-l-2 border-indigo-500">
+                                        <label class="text-[10px] font-bold text-indigo-400 uppercase italic block mb-1">PLAT: {{ $item->plate_number }}</label>
+                                        <p class="text-xl font-black text-slate-800 italic uppercase tracking-tighter">{{ $item->service->name ?? '-' }}</p>
+                                        <p class="text-[10px] font-medium text-slate-500 mt-1 uppercase">Status: <span class="text-indigo-600 font-black">PROSES</span></p>
+                                    </div>
+                                @empty
+                                    <div class="text-center py-4">
+                                        <p class="text-[10px] font-black text-slate-300 uppercase italic">Tidak ada unit aktif</p>
+                                    </div>
+                                @endforelse
                             </div>
                         </div>
                     </div>
@@ -160,7 +167,7 @@
         </div>
     </div>
 
-    {{-- Script Grafik --}}
+    {{-- Script Grafik (Hanya Admin) --}}
     @if(Auth::user()->role == 'admin')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -169,7 +176,7 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['PROSES', 'SELESAI'], // Label diperbarui
+                    labels: ['PROSES', 'SELESAI'],
                     datasets: [{
                         label: 'Jumlah Kendaraan',
                         data: [{{ $proses ?? 0 }}, {{ $done ?? 0 }}], 
@@ -182,24 +189,11 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1e293b',
-                            titleFont: { size: 13, weight: 'bold' },
-                            padding: 12,
-                            cornerRadius: 10
-                        }
+                        legend: { display: false }
                     },
                     scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: '#f1f5f9', drawBorder: false },
-                            ticks: { font: { weight: 'bold' }, color: '#94a3b8', stepSize: 1 }
-                        },
-                        x: { 
-                            grid: { display: false },
-                            ticks: { font: { weight: '900' }, color: '#64748b' }
-                        }
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
