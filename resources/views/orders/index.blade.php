@@ -1,94 +1,86 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center">
-            <h2 class="font-black text-2xl text-slate-800 tracking-tighter italic uppercase text-indigo-600 ml-0">
-                Order Servis
-            </h2>
-        </div>
+        <h2 class="font-bold text-xl tracking-tight text-slate-800">Order Servis</h2>
     </x-slot>
 
-    <div class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden mt-4">
-        <div class="px-8 py-8 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
-            <h3 class="font-black text-slate-800 uppercase tracking-tight italic">Riwayat Antrean & Transaksi</h3>
-            <a href="{{ route('orders.create') }}" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-3 px-6 rounded-2xl shadow-lg uppercase tracking-widest transition-all hover:scale-105">
-                <i class="fas fa-plus mr-2"></i> Order Baru
-            </a>
+    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-hidden mt-6 transition-all duration-500">
+        {{-- Header & Search --}}
+        <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h3 class="font-semibold text-slate-700 text-sm tracking-tight">Riwayat Antrean</h3>
+            
+            <div class="flex items-center gap-3">
+                <form action="{{ route('orders.index') }}" method="GET" class="relative">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari..." 
+                           class="bg-white border-slate-200 rounded-xl text-xs py-2 px-10 focus:ring-indigo-500">
+                    <i class="fas fa-search absolute left-4 top-3 text-slate-400 text-xs"></i>
+                </form>
+                <a href="{{ route('orders.create') }}" class="bg-indigo-600 text-white text-xs font-semibold py-2.5 px-5 rounded-xl shadow-md hover:bg-indigo-700 hover:scale-[1.02] transition-all">
+                    + Order Baru
+                </a>
+            </div>
         </div>
 
-        <div class="overflow-x-auto w-full">
-            <table class="w-full text-left border-collapse min-w-[1100px]">
-                <thead class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[1000px]">
+                <thead class="bg-slate-50/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
                     <tr>
-                        <th class="px-6 py-5 w-16 text-center">#</th>
-                        <th class="px-6 py-5">Tanggal</th>
-                        <th class="px-6 py-5">Pelanggan</th>
-                        <th class="px-6 py-5 whitespace-nowrap">No. Polisi</th>
-                        <th class="px-6 py-5">Layanan</th>
-                        <th class="px-6 py-5">Status</th>
-                        {{-- Header Total --}}
-                        <th class="px-6 py-5 text-right">Total</th>
-                        <th class="px-6 py-5 text-center">Tindakan</th>
+                        <th class="px-6 py-4 text-center w-16">#</th>
+                        <th class="px-6 py-4">Tanggal</th>
+                        <th class="px-6 py-4">Pelanggan</th>
+                        <th class="px-6 py-4">Detail Kendaraan & Layanan</th>
+                        <th class="px-6 py-4 text-center">Status</th>
+                        <th class="px-6 py-4 text-right">Total</th>
+                        <th class="px-6 py-4 text-center w-32">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-50">
-                    @forelse ($orders as $order)
-                    <tr class="hover:bg-slate-50/50 transition-all group">
-                        <td class="px-6 py-6 text-sm text-slate-400 text-center">{{ $loop->iteration }}</td>
-                        <td class="px-6 py-6 whitespace-nowrap text-xs font-bold text-slate-600 uppercase">
-                            {{ \Carbon\Carbon::parse($order->service_date)->format('d M Y') }}
+                <tbody class="divide-y divide-slate-100">
+                    @foreach ($orders as $order)
+                    <tr class="hover:bg-slate-50/40 transition-colors align-top">
+                        <td class="px-6 py-6 text-center text-slate-400 text-xs">{{ $loop->iteration }}</td>
+                        <td class="px-6 py-6 text-xs text-slate-600 font-medium">{{ \Carbon\Carbon::parse($order->service_date)->format('d M Y') }}</td>
+                        <td class="px-6 py-6 font-semibold text-slate-800 text-sm capitalize">{{ strtolower($order->customer->name ?? 'N/A') }}</td>
+
+                        <td class="px-6 py-5">
+                            <div class="flex flex-col gap-2">
+                                @php 
+                                    $plates = explode(', ', $order->plate_number);
+                                    $services = explode(', ', $order->service_id);
+                                @endphp
+                                @foreach($plates as $index => $plate)
+                                <div class="flex items-center gap-3 py-1 px-3 bg-slate-50 rounded-lg border border-slate-100/80">
+                                    <span class="text-[11px] font-bold text-indigo-600 min-w-[100px]">{{ $plate }}</span>
+                                    <div class="h-4 w-px bg-slate-200"></div>
+                                    <span class="text-[11px] text-slate-500 font-medium uppercase">{{ $allServices[$services[$index]]->name ?? 'Layanan' }}</span>
+                                </div>
+                                @endforeach
+                            </div>
                         </td>
-                        
-                        <td class="px-6 py-6">
-                            <span class="text-xs font-medium text-slate-600 tracking-tight block">
-                                {{ $order->customer->name ?? '-' }}
+
+                        <td class="px-6 py-6 text-center">
+                            <span class="px-3 py-1 rounded-lg text-[10px] font-semibold uppercase {{ $order->status === 'done' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }}">
+                                {{ $order->status }}
                             </span>
                         </td>
-                                                
-                        <td class="px-6 py-6 whitespace-nowrap">
-                             <span class="inline-flex px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200 uppercase tracking-tighter">
-                                {{ $order->plate_number ?? '-' }}
-                             </span>
-                        </td>
 
-                        <td class="px-6 py-6 text-xs font-bold text-indigo-600 uppercase">
-                            {{ $order->service->name ?? '-' }}
+                        <td class="px-6 py-6 text-right font-semibold text-slate-700 text-sm">
+                            Rp {{ number_format($order->total, 0, ',', '.') }}
                         </td>
 
                         <td class="px-6 py-6">
-                            @if($order->status === 'done')
-                                <span class="px-3 py-1 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-600 border border-emerald-200 shadow-sm shadow-emerald-100">SELESAI</span>
-                            @else
-                                <span class="px-3 py-1 rounded-full text-[9px] font-black bg-amber-100 text-amber-600 border border-amber-200 shadow-sm shadow-amber-100">PROSES</span>
-                            @endif
-                        </td>
-
-                        {{-- BAGIAN YANG DIPERBAIKI: Mengambil harga langsung dari relasi layanan --}}
-                        <td class="px-6 py-6 text-right font-black text-slate-800 text-sm whitespace-nowrap">
-                            Rp {{ number_format($order->service->price ?? 0, 0, ',', '.') }}
-                        </td>
-
-                        <td class="px-6 py-6">
-                            <div class="flex justify-center space-x-2">
-                                <a href="{{ route('orders.edit', $order->id) }}" class="p-2 bg-amber-400 hover:bg-amber-500 text-white rounded-xl shadow-sm transition-colors">
-                                    <i class="fas fa-edit text-xs"></i>
+                            <div class="flex items-center justify-center gap-4">
+                                <a href="{{ route('orders.edit', $order->id) }}" class="text-slate-300 hover:text-indigo-600 transition-colors">
+                                    <i class="fas fa-edit text-sm"></i>
                                 </a>
-                                <form action="{{ route('orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('Hapus order ini?')">
-                                    @csrf 
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-sm transition-colors">
-                                        <i class="fas fa-trash text-xs"></i>
+                                <form action="{{ route('orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('Hapus order?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-slate-300 hover:text-rose-500 transition-colors">
+                                        <i class="fas fa-trash-alt text-sm"></i>
                                     </button>
                                 </form>
                             </div>
                         </td>
                     </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" class="px-10 py-20 text-center text-slate-400 font-bold uppercase text-xs italic tracking-widest">
-                            Belum ada order hari ini.
-                        </td>
-                    </tr>x
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
         </div>

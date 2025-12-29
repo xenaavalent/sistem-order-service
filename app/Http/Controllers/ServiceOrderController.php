@@ -2,84 +2,89 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ServiceOrder;
-use App\Models\customers;
-use App\Models\Services;
 use Illuminate\Http\Request;
+use App\Models\ServiceOrder;
+use App\Models\services; 
+use App\Models\customers;
 
 class ServiceOrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $orders = ServiceOrder::with(['customer', 'service'])->latest()->get();
-        return view('orders.index', compact('orders'));
+        $query = ServiceOrder::with('customer');
+
+        // Filter Pencarian
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where('plate_number', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+        }
+
+        $orders = $query->latest()->get();
+        $allServices = services::all()->keyBy('id');
+        
+        return view('orders.index', compact('orders', 'allServices'));
     }
 
     public function create()
     {
-        $customers = customers::orderBy('name')->get();
-        $services = Services::orderBy('name')->get();
-        return view('orders.create', compact('customers', 'services'));
+        $customers = customers::all();
+        $allServices = services::all();
+        return view('orders.create', compact('customers', 'allServices'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'customer_id'  => 'required|exists:customers,id',
-            'service_id'   => 'required|exists:services,id',
-            'service_date' => 'required|date',
-            'status'       => 'required|in:pending,done',
-            'plate_number' => 'required|string|max:20',
+            'customers_id' => 'required',
+            'plate_numbers' => 'required|array',
+            'service_ids' => 'required|array',
         ]);
 
-        $service = Services::findOrFail($request->service_id);
+        $totalHarga = services::whereIn('id', $request->service_ids)->sum('price');
 
         ServiceOrder::create([
-            'customers_id' => $request->customer_id, 
-            'service_id'   => $request->service_id, 
-            'service_date' => $request->service_date,
-            'status'       => $request->status,
-            'total'        => $service->price,
-            'plate_number' => $request->plate_number,
+            'customers_id' => $request->customers_id,
+            'plate_number' => implode(', ', array_map('strtoupper', $request->plate_numbers)),
+            'service_id'   => implode(', ', $request->service_ids),
+            'service_date' => now(), 
+            'status'       => 'proses',
+            'total'        => $totalHarga,
         ]);
 
-        return redirect()->route('orders.index')->with('success', 'Order berhasil dibuat!');
+        return redirect()->route('orders.index');
     }
 
-    public function edit(ServiceOrder $order)
+    public function edit($id)
     {
-        $customers = customers::orderBy('name')->get();
-        $services = Services::orderBy('name')->get();
-        return view('orders.edit', compact('order', 'customers', 'services'));
+        $order = ServiceOrder::findOrFail($id);
+        $customers = customers::all();
+        $allServices = services::all();
+        return view('orders.edit', compact('order', 'customers', 'allServices'));
     }
 
-    public function update(Request $request, ServiceOrder $order)
+    public function update(Request $request, $id)
     {
-        $request->validate([
-            'customer_id'  => 'required|exists:customers,id',
-            'service_id'   => 'required|exists:services,id',
-            'service_date' => 'required|date',
-            'status'       => 'required|in:pending,done',
-            'plate_number' => 'required|string|max:20',
-        ]);
-
-        $service = Services::findOrFail($request->service_id);
+        $order = ServiceOrder::findOrFail($id);
+        
+        $totalHarga = services::whereIn('id', $request->service_ids)->sum('price');
 
         $order->update([
-            'customers_id' => $request->customer_id,
-            'service_id'   => $request->service_id,
-            'service_date' => $request->service_date,
+            'customers_id' => $request->customers_id,
+            'plate_number' => implode(', ', array_map('strtoupper', $request->plate_numbers)),
+            'service_id'   => implode(', ', $request->service_ids),
             'status'       => $request->status,
-            'total'        => $service->price,
-            'plate_number' => $request->plate_number,
+            'total'        => $totalHarga,
         ]);
 
-        return redirect()->route('orders.index')->with('success', 'Order diperbarui!');
+        return redirect()->route('orders.index');
     }
 
-    public function destroy(ServiceOrder $order)
+    public function destroy($id)
     {
-        $order->delete();
-        return redirect()->route('orders.index')->with('success', 'Order dihapus.');
+        ServiceOrder::findOrFail($id)->delete();
+        return redirect()->route('orders.index');
     }
 }

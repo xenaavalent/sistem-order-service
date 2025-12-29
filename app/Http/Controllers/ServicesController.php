@@ -19,18 +19,20 @@ class ServicesController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $data = $request->validate([
-            'name'  => 'required|string|max:255',
-            'price' => 'required|integer|min:0',
-        ]);
+{
+    $request->validate([
+        // Tambahkan 'unique:services' di sini
+        'name' => 'required|string|max:255|unique:services,name',
+        'price' => 'required|numeric|min:0',
+    ], [
+        // Pesan error kustom agar lebih informatif
+        'name.unique' => 'Layanan ini sudah ada! Gunakan nama lain atau edit layanan yang sudah ada.',
+    ]);
 
-        services::create($data);
+    Service::create($request->all());
 
-        return redirect()
-            ->route('services.index')
-            ->with('success', 'Layanan berhasil ditambahkan.');
-    }
+    return redirect()->route('services.index')->with('success', 'Layanan berhasil ditambahkan.');
+}
 
     /**
      * REVISI DI SINI:

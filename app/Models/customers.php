@@ -13,11 +13,13 @@ class customers extends Model
     protected $table = 'customers';
 
     protected $fillable = [
-        'user_id',
-        'name',
-        'phone',
-        'plate_number',
-    ];
+    'name', 
+    'phone', 
+    'address', 
+    'plate_number', 
+    'vehicle_brand', // Tambahan baru
+    'vehicle_type'   // Tambahan baru
+];
 
     /**
      * Relasi balik ke User
