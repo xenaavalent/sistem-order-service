@@ -12,21 +12,20 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-
-    // Dashboard (Logika dipisah di DashboardController)
+    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Filter Khusus Admin
     Route::middleware('role:admin')->group(function () {
+        // Menggunakan resource agar otomatis mendukung index, create, store, dll
         Route::resource('services', ServicesController::class);
         Route::resource('customers', CustomersController::class);
         Route::resource('orders', ServiceOrderController::class);
         
-        // Route untuk update status servis (Pending -> Proses -> Done)
         Route::patch('orders/{order}/status', [ServiceOrderController::class, 'updateStatus'])->name('orders.updateStatus');
     });
 
-    // Profile (Admin & Customer)
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

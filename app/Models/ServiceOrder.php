@@ -2,25 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ServiceOrder extends Model
 {
-    use HasFactory;
-
+    // Pastikan semua kolom ini bisa diisi
     protected $fillable = [
-        'customers_id',
-        'plate_number',
-        'service_id',
-        'service_date',
-        'status',
-        'total',
+        'user_id', 
+        'plate_number', 
+        'service_id', 
+        'total', 
+        'status', 
+        'service_date'
     ];
 
-    // Relasi untuk memanggil Nama Pelanggan
+    /**
+     * Relasi ke Customer
+     * Menghubungkan customer_id (ServiceOrder) ke id (Customer)
+     */
     public function customer()
     {
-        return $this->belongsTo(customers::class, 'customers_id');
+        return $this->belongsTo(Customer::class, 'user_id');
     }
 }

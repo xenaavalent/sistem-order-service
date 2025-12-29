@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\customers;
+use App\Models\Customer;
 use App\Models\Services;
 use App\Models\ServiceOrder;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +15,7 @@ class DashboardController extends Controller
 
         if ($user->role === 'admin') {
             // 1. Statistik Dasar
-            $totalPelanggan = customers::count();
+            $totalPelanggan = Customer::count();
             $totalLayanan = Services::count();
             
             // 2. Logika 2 Kata Kunci (Proses & Done)
