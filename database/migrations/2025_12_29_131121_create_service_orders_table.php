@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->foreignId('service_id')->constrained('services')->onDelete('cascade');
             $table->string('vehicle_name')->nullable();
-            $table->string('license_plate')->nullable();
+            $table->string('plate_number')->nullable();
             $table->enum('status', ['pending', 'proses', 'done'])->default('pending');
             $table->decimal('total_price', 15, 2)->default(0);
             $table->text('notes')->nullable();

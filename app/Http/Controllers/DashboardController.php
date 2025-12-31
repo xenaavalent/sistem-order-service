@@ -19,7 +19,7 @@ class DashboardController extends Controller
             $totalLayanan = Service::count();
             
             // 2. Logika 2 Kata Kunci (Proses & Done)
-            // Kita hitung 'proses' dan 'pending' jadi satu kelompok 'PROSES' agar sinkron
+            // Hitung 'proses' dan 'pending' jadi satu kelompok 'PROSES'
             $proses = ServiceOrder::whereIn('status', ['proses', 'pending'])->count();
             
             // Hitung yang sudah 'done' sebagai 'SELESAI'
@@ -38,10 +38,16 @@ class DashboardController extends Controller
 
         } else {
             // Dashboard untuk Customer
-            $myOrders = ServiceOrder::where('customer_id', $user->customer->id ?? 0)
-                                    ->with('service')
-                                    ->latest()
-                                    ->get();
+            // Ambil data profil customer milik user yang login
+            $customer = $user->customer; 
+
+            // Jika ada profilnya, ambil orderannya. Jika tidak, kirim koleksi kosong.
+            $myOrders = $customer 
+                ? ServiceOrder::where('customer_id', $customer->id)
+                                ->with('service')
+                                ->latest()
+                                ->get()
+                : collect();
 
             return view('dashboard', compact('myOrders'));
         }
