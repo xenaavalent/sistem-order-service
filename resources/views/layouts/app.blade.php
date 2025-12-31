@@ -45,18 +45,29 @@
                         <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
                     </a>
 
-                    <div class="pt-6 pb-2 px-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Master Data</div>
-                    <a href="{{ route('services.index') }}" class="flex items-center px-6 py-3.5 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('services.*') ? 'text-white bg-indigo-600 shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
-                        <i class="fas fa-wrench mr-3"></i> Layanan Servis
-                    </a>
-                    <a href="{{ route('customers.index') }}" class="flex items-center px-6 py-3.5 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('customers.*') ? 'text-white bg-indigo-600 shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
-                        <i class="fas fa-users mr-3"></i> Pelanggan
-                    </a>
+                    {{-- MENU KHUSUS ADMIN --}}
+                    @if(Auth::user()->role == 'admin')
+                        <div class="pt-6 pb-2 px-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Master Data</div>
+                        <a href="{{ route('services.index') }}" class="flex items-center px-6 py-3.5 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('services.*') ? 'text-white bg-indigo-600 shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                            <i class="fas fa-wrench mr-3"></i> Layanan Servis
+                        </a>
+                        <a href="{{ route('customers.index') }}" class="flex items-center px-6 py-3.5 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('customers.*') ? 'text-white bg-indigo-600 shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                            <i class="fas fa-users mr-3"></i> Pelanggan
+                        </a>
 
-                    <div class="pt-6 pb-2 px-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Transaksi</div>
-                    <a href="{{ route('orders.index') }}" class="flex items-center px-6 py-3.5 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('orders.*') ? 'text-white bg-indigo-600 shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
-                        <i class="fas fa-file-invoice mr-3"></i> Order Servis
-                    </a>
+                        <div class="pt-6 pb-2 px-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Transaksi</div>
+                        <a href="{{ route('orders.index') }}" class="flex items-center px-6 py-3.5 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('orders.*') ? 'text-white bg-indigo-600 shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                            <i class="fas fa-file-invoice mr-3"></i> Order Servis
+                        </a>
+                    @endif
+
+                    {{-- MENU KHUSUS CUSTOMER --}}
+                    @if(Auth::user()->role == 'customer')
+                        <div class="pt-6 pb-2 px-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Aktivitas Saya</div>
+                        <a href="{{ route('orders.index') }}" class="flex items-center px-6 py-3.5 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('orders.*') ? 'text-white bg-indigo-600 shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                            <i class="fas fa-history mr-3"></i> Riwayat Servis
+                        </a>
+                    @endif
                 </nav>
             </div>
         </aside>

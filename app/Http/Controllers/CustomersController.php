@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\customers;
+use App\Models\Customer;
 use App\Models\User; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash; 
@@ -16,7 +16,7 @@ class CustomersController extends Controller
     public function index()
     {
         // Mengambil data customer urut abjad nama
-        $customers = customers::orderBy('name')->get();
+        $customers = Customer::orderBy('name')->get();
         return view('customer.index', compact('customers'));
     }
 
@@ -54,10 +54,11 @@ class CustomersController extends Controller
                 'role'     => 'customer', // Memastikan role terisi
             ]);
 
-            // 3. Buat data di tabel CUSTOMERS dan hubungkan dengan user_id
-            customers::create([
+            // 3. Buat data di tabel CUSTOMERS
+            Customer::create([
                 'user_id'      => $user->id,
                 'name'         => $request->name,
+                'email'        => $request->email, // Tambahkan ini agar email tersimpan
                 'phone'        => $request->phone,
                 'plate_number' => $request->plate_number,
             ]);
@@ -74,7 +75,7 @@ class CustomersController extends Controller
     /**
      * Menampilkan form edit pelanggan
      */
-    public function edit(customers $customer)
+    public function edit(Customer $customer)
     {
         return view('customer.edit', compact('customer'));
     }
@@ -82,7 +83,7 @@ class CustomersController extends Controller
     /**
      * Memperbarui data profil pelanggan (tidak mengubah password/email user)
      */
-    public function update(Request $request, customers $customer)
+    public function update(Request $request, Customer $customer)
     {
         $data = $request->validate([
             'name'         => 'required|string|max:255',
@@ -98,7 +99,7 @@ class CustomersController extends Controller
     /**
      * Menghapus pelanggan beserta akun loginnya
      */
-    public function destroy(customers $customer)
+    public function destroy(Customer $customer)
     {
         DB::beginTransaction();
 

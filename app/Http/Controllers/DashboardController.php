@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\Services;
+use App\Models\Service;
 use App\Models\ServiceOrder;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,7 +16,7 @@ class DashboardController extends Controller
         if ($user->role === 'admin') {
             // 1. Statistik Dasar
             $totalPelanggan = Customer::count();
-            $totalLayanan = Services::count();
+            $totalLayanan = Service::count();
             
             // 2. Logika 2 Kata Kunci (Proses & Done)
             // Kita hitung 'proses' dan 'pending' jadi satu kelompok 'PROSES' agar sinkron
@@ -26,7 +26,7 @@ class DashboardController extends Controller
             $done = ServiceOrder::where('status', 'done')->count();
 
             // Total pendapatan tetap dari yang sudah 'done'
-            $totalPendapatan = ServiceOrder::where('status', 'done')->sum('total');
+            $totalPendapatan = ServiceOrder::where('status', 'done')->sum('total_price');
 
             return view('dashboard', compact(
                 'totalPelanggan', 
@@ -38,7 +38,7 @@ class DashboardController extends Controller
 
         } else {
             // Dashboard untuk Customer
-            $myOrders = ServiceOrder::where('customers_id', $user->customer->id ?? 0)
+            $myOrders = ServiceOrder::where('customer_id', $user->customer->id ?? 0)
                                     ->with('service')
                                     ->latest()
                                     ->get();

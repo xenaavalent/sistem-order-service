@@ -2,24 +2,30 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
-    protected $table = 'customers'; // Nama tabel di database Anda
+    use HasFactory;
 
     protected $fillable = [
         'user_id', 
         'name', 
+        'email',
         'phone', 
         'vehicle_brand', 
         'vehicle_type', 
         'plate_number'
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function serviceOrders()
     {
-        // Pastikan foreign key di tabel service_orders adalah customer_id
-        return $this->hasMany(ServiceOrder::class, 'user_id');
+        return $this->hasMany(ServiceOrder::class, 'customer_id');
     }
 }
