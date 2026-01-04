@@ -8,48 +8,80 @@ use App\Models\Service;
 class ServicesController extends Controller
 {
     /**
-     * Menampilkan daftar semua master layanan yang ada di database.
+     * Tampilkan semua master jasa/layanan (Hanya Admin)
      */
     public function index()
     {
-        $services = Service::all();
-        return view('services.index', compact('services'));
+        $services = Service::orderBy('name', 'asc')->get();
+        return view('admin.services.index', compact('services'));
     }
 
     /**
-     * Menampilkan form untuk menambah jenis layanan baru.
+     * Form tambah layanan baru
      */
-    public function create()
+   public function create()
     {
-        return view('services.create');
+        // Kita ambil semua data layanan agar tabel di sisi kanan create.blade tidak error
+        $services = \App\Models\Service::orderBy('name', 'asc')->get();
+        
+        return view('admin.services.create', compact('services'));
     }
-
     /**
-     * Menyimpan master layanan baru (Nama Jasa & Harga).
-     * Fokus fitur ini adalah input layanan yang nantinya dipilih customer.
+     * Simpan layanan baru ke database
      */
     public function store(Request $request)
     {
-        // 1. Validasi input: Pastikan nama ada dan harga adalah angka
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric',
+        $request->validate([
+            'name'  => 'required|string|max:255|unique:services,name',
+            'price' => 'required|numeric|min:0',
         ]);
 
-        // 2. Simpan data ke tabel services
-        // Pastikan model Service sudah memiliki properti $fillable = ['name', 'price']
-        Service::create($validated);
+        Service::create([
+            'name'  => $request->name,
+            'price' => $request->price,
+        ]);
 
-        // 3. Kembali ke halaman create dengan pesan sukses
-        return redirect()->route('services.create')->with('success', 'Master layanan berhasil ditambahkan ke sistem!');
+        return redirect()->route('services.index')->with('success', 'Layanan berhasil ditambahkan!');
     }
 
     /**
-     * Opsional: Menghapus master layanan
+     * Form edit layanan
      */
-    public function destroy(Service $service)
+    public function edit($id)
     {
+        $service = Service::findOrFail($id);
+        return view('admin.services.edit', compact('service'));
+    }
+
+    /**
+     * Update data layanan
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name'  => 'required|string|max:255|unique:services,name,' . $id,
+            'price' => 'required|numeric|min:0',
+        ]);
+
+        $service = Service::findOrFail($id);
+        $service->update([
+            'name'  => $request->name,
+            'price' => $request->price,
+        ]);
+
+        return redirect()->route('services.index')->with('success', 'Layanan berhasil diperbarui!');
+    }
+
+    /**
+     * Hapus layanan
+     */
+    public function destroy($id)
+    {
+        $service = Service::findOrFail($id);
+        
+        // Cek jika layanan masih terikat dengan order (opsional, tergantung kebutuhan bisnis)
         $service->delete();
-        return redirect()->route('services.index')->with('success', 'Layanan berhasil dihapus.');
+
+        return redirect()->route('services.index')->with('success', 'Layanan berhasil dihapus!');
     }
 }

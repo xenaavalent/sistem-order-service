@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Service;
 use App\Models\ServiceOrder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -13,43 +14,51 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role === 'admin') {
-            // 1. Statistik Dasar
+        // 1. LOGIKA UNTUK ADMIN
+        if ($user->role == 'admin') {
             $totalPelanggan = Customer::count();
             $totalLayanan = Service::count();
-            
-            // 2. Logika 2 Kata Kunci (Proses & Done)
-            // Hitung 'proses' dan 'pending' jadi satu kelompok 'PROSES'
-            $proses = ServiceOrder::whereIn('status', ['proses', 'pending'])->count();
-            
-            // Hitung yang sudah 'done' sebagai 'SELESAI'
-            $done = ServiceOrder::where('status', 'done')->count();
 
-            // Total pendapatan tetap dari yang sudah 'done'
-            $totalPendapatan = ServiceOrder::where('status', 'done')->sum('total_price');
+            // Sesuai revisi: Menggunakan DONE dan PROSES (Uppercase)
+            $sedangProses = ServiceOrder::whereIn('status', ['PROSES', 'PENDING'])->count();
+            $revenueSelesai = ServiceOrder::where('status', 'DONE')->sum('total_price');
+
+            // Data untuk Grafik (Chart.js)
+            $countSelesai = ServiceOrder::where('status', 'DONE')->count();
+            $countProses = ServiceOrder::where('status', 'PROSES')->count();
 
             return view('dashboard', compact(
                 'totalPelanggan', 
                 'totalLayanan', 
-                'proses', 
-                'done', 
-                'totalPendapatan'
+                'sedangProses', 
+                'revenueSelesai',
+                'countSelesai',
+                'countProses'
             ));
+        } 
+        
+        // 2. LOGIKA UNTUK CUSTOMER
+        else {
+            // Ambil data customer dulu karena di service_orders yang disimpan adalah customer_id
+            $customer = Customer::where('user_id', $user->id)->first();
+            
+            if (!$customer) {
+                $myOrders = collect();
+                $unitAktif = collect();
+            } else {
+                // Ambil Riwayat (Semua Order)
+                $myOrders = ServiceOrder::where('customer_id', $customer->id) 
+                    ->with('services') // Gunakan jamak 'services' sesuai Model Many-to-Many
+                    ->latest()
+                    ->get();
 
-        } else {
-            // Dashboard untuk Customer
-            // Ambil data profil customer milik user yang login
-            $customer = $user->customer; 
+                // Ambil Unit Aktif (Hanya yang PENDING/PROSES)
+                $unitAktif = ServiceOrder::where('customer_id', $customer->id)
+                    ->whereIn('status', ['PENDING', 'PROSES'])
+                    ->get();
+            }
 
-            // Jika ada profilnya, ambil orderannya. Jika tidak, kirim koleksi kosong.
-            $myOrders = $customer 
-                ? ServiceOrder::where('customer_id', $customer->id)
-                                ->with('service')
-                                ->latest()
-                                ->get()
-                : collect();
-
-            return view('dashboard', compact('myOrders'));
+            return view('dashboard', compact('myOrders', 'unitAktif'));
         }
     }
 }

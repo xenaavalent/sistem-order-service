@@ -11,21 +11,20 @@ use Illuminate\Support\Facades\DB;
 class CustomersController extends Controller
 {
     /**
-     * Menampilkan daftar semua pelanggan
+     * Menampilkan daftar semua pelanggan (Wilayah Admin)
      */
     public function index()
     {
-        // Mengambil data customer urut abjad nama
         $customers = Customer::orderBy('name')->get();
-        return view('customer.index', compact('customers'));
+        return view('admin.customer.index', compact('customers'));
     }
 
     /**
-     * Menampilkan form tambah pelanggan baru
+     * Menampilkan form tambah pelanggan baru (Wilayah Admin)
      */
     public function create()
     {
-        return view('customer.create');
+        return view('admin.customer.create');
     }
 
     /**
@@ -33,67 +32,96 @@ class CustomersController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input
         $request->validate([
-            'name'         => 'required|string|max:255',
-            'email'        => 'required|email|unique:users,email', 
-            'password'     => 'required|string|min:6',
-            'phone'        => 'nullable|string|max:30',
-            'plate_number' => 'nullable|string|max:20',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email', 
+            'password' => 'required|string|min:6',
+            'phone'    => 'nullable|string|max:30',
+            // plate_number SUDAH DIHAPUS DARI SINI
         ]);
 
-        // Gunakan Database Transaction agar jika salah satu gagal, semua dibatalkan
         DB::beginTransaction();
 
         try {
-            // 2. Buat akun di tabel USERS
+            // 1. Buat akun di tabel USERS
             $user = User::create([
                 'name'     => $request->name,
                 'email'    => $request->email,
                 'password' => Hash::make($request->password),
-                'role'     => 'customer', // Memastikan role terisi
+                'role'     => 'customer', 
             ]);
 
-            // 3. Buat data di tabel CUSTOMERS
+            // 2. Buat data di tabel CUSTOMERS
             Customer::create([
-                'user_id'      => $user->id,
-                'name'         => $request->name,
-                'email'        => $request->email, // Tambahkan ini agar email tersimpan
-                'phone'        => $request->phone,
-                'plate_number' => $request->plate_number,
+                'user_id' => $user->id,
+                'name'    => $request->name,
+                'email'   => $request->email,
+                'phone'   => $request->phone,
+                // plate_number SUDAH DIHAPUS DARI SINI
             ]);
 
             DB::commit();
-            return redirect()->route('customers.index')->with('success', 'Pelanggan dan Akun Login berhasil dibuat.');
+            return redirect()->route('customers.index')->with('success', 'Pelanggan berhasil didaftarkan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mendaftar: ' . $e->getMessage());
         }
     }
 
     /**
-     * Menampilkan form edit pelanggan
+     * Menampilkan form edit pelanggan (Wilayah Admin)
      */
     public function edit(Customer $customer)
     {
-        return view('customer.edit', compact('customer'));
+        return view('admin.customer.edit', compact('customer'));
     }
 
     /**
-     * Memperbarui data profil pelanggan (tidak mengubah password/email user)
+     * Memperbarui data profil, email, dan password
      */
     public function update(Request $request, Customer $customer)
     {
-        $data = $request->validate([
-            'name'         => 'required|string|max:255',
-            'phone'        => 'nullable|string|max:30',
-            'plate_number' => 'nullable|string|max:20',
+        $user = User::find($customer->user_id);
+
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . ($user->id ?? 0),
+            'phone'    => 'nullable|string|max:30',
+            'password' => 'nullable|string|min:6', 
+            // plate_number SUDAH DIHAPUS DARI SINI
         ]);
 
-        $customer->update($data);
+        DB::beginTransaction();
 
-        return redirect()->route('customers.index')->with('success', 'Data pelanggan berhasil diperbarui.');
+        try {
+            $customer->update([
+                'name'  => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                // plate_number SUDAH DIHAPUS DARI SINI
+            ]);
+
+            if ($user) {
+                $userData = [
+                    'name'  => $request->name,
+                    'email' => $request->email,
+                ];
+
+                if ($request->filled('password')) {
+                    $userData['password'] = Hash::make($request->password);
+                }
+
+                $user->update($userData);
+            }
+
+            DB::commit();
+            return redirect()->route('customers.index')->with('success', 'Data pelanggan berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -104,16 +132,14 @@ class CustomersController extends Controller
         DB::beginTransaction();
 
         try {
-            // Cari User terkait melalui relasi (pastikan relasi user() sudah ada di model customers)
-            if ($customer->user) {
-                $customer->user()->delete(); 
+            if ($customer->user_id) {
+                User::where('id', $customer->user_id)->delete();
             }
             
-            // Hapus data customer
             $customer->delete();
 
             DB::commit();
-            return redirect()->route('customers.index')->with('success', 'Pelanggan dan Akun Login berhasil dihapus.');
+            return redirect()->route('customers.index')->with('success', 'Data berhasil dihapus.');
 
         } catch (\Exception $e) {
             DB::rollBack();

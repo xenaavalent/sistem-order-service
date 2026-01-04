@@ -5,60 +5,132 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\ServiceOrder;
+use App\Models\Vehicle;
 use App\Models\Customer;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ServiceOrderController extends Controller
 {
-    public function index(Request $request)
-{
-    // Mengambil data order beserta data pelanggannya
-    $query = ServiceOrder::with('customer'); 
-
-    if ($request->search) {
-        $query->where('plate_number', 'like', "%{$request->search}%");
-    }
-
-    $orders = $query->latest()->get();
-    
-    // Dibutuhkan untuk menampilkan nama layanan di kolom 'Detail'
-    $allServices = Service::all()->keyBy('id');
-
-    return view('orders.index', compact('orders', 'allServices'));
-}
-
-    public function create()
+    /**
+     * Menampilkan daftar order (Admin) atau Riwayat (Customer)
+     */
+    public function index()
     {
-        $services = Service::all();
-        $allServices = $services->keyBy('id'); // Agar create.blade tidak error
-        $customers = Customer::all();
+        $user = Auth::user();
 
-        return view('orders.create', compact('services', 'allServices', 'customers'));
-    }
-
-    public function store(Request $request)
-    {
-        $total = 0;
-        // Menghitung total harga layanan yang dipilih
-        foreach ($request->service_id as $id) {
-            $service = Service::find($id);
-            if ($service) { $total += $service->price; }
+        if ($user->role == 'admin') {
+            $orders = ServiceOrder::with(['services', 'customer.user', 'vehicle'])->latest()->get();
+            return view('admin.orders.index', compact('orders'));
         }
 
-        ServiceOrder::create([
-            'customer_id'  => $request->customer_id,
-            'plate_number' => implode(', ', $request->plate_number),
-            'service_id'   => implode(', ', $request->service_id),
-            'total'        => $total,
-            'status'       => 'pending',
-            'service_date' => $request->service_date ?? now(),
-        ]);
-
-        return redirect()->route('orders.index')->with('success', 'Order berhasil!');
+        $customer = Customer::where('user_id', $user->id)->first();
+        $orders = $customer 
+            ? ServiceOrder::where('customer_id', $customer->id)->with(['services', 'vehicle'])->latest()->get()
+            : collect();
+                    
+        return view('customer.orders.riwayat', compact('orders'));
     }
 
-    public function destroy(ServiceOrder $order)
+    /**
+     * Form Booking untuk Customer
+     */
+    public function create()
     {
+        $allServices = Service::orderBy('name', 'asc')->get();
+        $myVehicles = Vehicle::where('user_id', Auth::id())->get();
+
+        if ($myVehicles->isEmpty()) {
+            return redirect()->route('vehicles.create')
+                ->with('error', 'Silakan tambah kendaraan di garasi dulu sebelum booking!');
+        }
+
+        return view('customer.orders.create', compact('allServices', 'myVehicles'));
+    }
+
+    /**
+     * Menyimpan data booking baru
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'service_ids' => 'required|array|min:1',
+            'total_price' => 'required|numeric',
+        ]);
+
+        $vehicle = Vehicle::findOrFail($request->vehicle_id);
+        $customer = Customer::where('user_id', Auth::id())->first();
+
+        if (!$customer) {
+            return back()->with('error', 'Profil customer tidak ditemukan.');
+        }
+
+        DB::transaction(function () use ($request, $customer, $vehicle) {
+            $order = ServiceOrder::create([
+                'customer_id'  => $customer->id,
+                'vehicle_id'   => $vehicle->id, 
+                'vehicle_name' => $vehicle->motor_type,
+                'plate_number' => $vehicle->plate_number,
+                'total_price'  => $request->total_price, 
+                'status'       => 'PENDING',
+                'service_date' => now(),
+                'notes'        => $request->notes,
+            ]);
+
+            foreach ($request->service_ids as $id) {
+                $service = Service::find($id);
+                $order->services()->attach($id, ['price' => $service->price]);
+            }
+        });
+
+        return redirect()->route('riwayat.index')->with('success', 'Booking berhasil!');
+    }
+
+    /**
+     * HALAMAN EDIT: Untuk Admin mengubah status order
+     */
+    public function edit($id)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $order = ServiceOrder::with(['services', 'customer.user', 'vehicle'])->findOrFail($id);
+        $statuses = ['PENDING', 'PROSES', 'DONE', 'BATAL'];
+
+        return view('admin.orders.edit', compact('order', 'statuses'));
+    }
+
+    /**
+     * PROSES UPDATE: Menyimpan perubahan status
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:PENDING,PROSES,DONE,BATAL',
+        ]);
+
+        $order = ServiceOrder::findOrFail($id);
+        $order->update([
+            'status' => $request->status,
+            'notes'  => $request->notes,
+        ]);
+
+        // Jika admin, balikkan ke daftar order admin, jika customer (jika ada fitur edit) ke riwayat
+        $route = Auth::user()->role === 'admin' ? 'orders.index' : 'riwayat.index';
+
+        return redirect()->route($route)->with('success', 'Data order berhasil diperbarui!');
+    }
+
+    /**
+     * Hapus Order
+     */
+    public function destroy($id)
+    {
+        $order = ServiceOrder::findOrFail($id);
         $order->delete();
-        return back();
+
+        return back()->with('success', 'Data order berhasil dihapus.');
     }
 }

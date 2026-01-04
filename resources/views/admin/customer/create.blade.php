@@ -32,7 +32,7 @@
                                 name="name" 
                                 value="{{ old('name') }}"
                                 class="w-full px-6 py-4 bg-slate-50 border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium text-slate-600 placeholder-slate-300 transition-all"
-                                placeholder="Masukkan nama pemilik kendaraan"
+                                placeholder="Masukkan nama pelanggan"
                                 required
                             >
                             @error('name')
@@ -57,24 +57,6 @@
                             @enderror
                         </div>
 
-                        {{-- Input No Polisi --}}
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                Nomor Polisi (Plat Nomor)
-                            </label>
-                            <input 
-                                type="text" 
-                                name="plate_number" 
-                                value="{{ old('plate_number') }}"
-                                class="w-full px-6 py-4 bg-slate-50 border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-bold text-slate-700 placeholder-slate-300 transition-all uppercase"
-                                placeholder="Contoh: B 1234 ABC"
-                                required
-                            >
-                            @error('plate_number')
-                                <p class="text-rose-500 text-[10px] font-bold mt-2 ml-2 uppercase italic tracking-wider">{{ $message }}</p>
-                            @enderror
-                        </div>
-
                         {{-- Input Email (WAJIB UNTUK LOGIN) --}}
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
@@ -93,38 +75,28 @@
                             @enderror
                         </div>
 
-                       <div class="space-y-2">
-    <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-        Password Login
-    </label>
-    <div class="relative">
-        <input 
-            id="password"
-            type="password" 
-            name="password" 
-            class="w-full px-6 py-4 bg-slate-50 border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium text-slate-600 transition-all"
-            required
-        >
-        <button type="button" onclick="togglePassword()" class="absolute right-6 top-4 text-slate-400 hover:text-indigo-600">
-            <span id="eye-icon">Tampilkan</span>
-        </button>
-    </div>
-</div>
-
-<script>
-function togglePassword() {
-    const passInput = document.getElementById('password');
-    const eyeIcon = document.getElementById('eye-icon');
-    
-    if (passInput.type === 'password') {
-        passInput.type = 'text';
-        eyeIcon.innerText = 'Sembunyikan';
-    } else {
-        passInput.type = 'password';
-        eyeIcon.innerText = 'Tampilkan';
-    }
-}
-</script>
+                        {{-- Input Password --}}
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                                Password Login
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    id="password"
+                                    type="password" 
+                                    name="password" 
+                                    class="w-full px-6 py-4 bg-slate-50 border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium text-slate-600 transition-all"
+                                    placeholder="Buat password minimal 6 karakter"
+                                    required
+                                >
+                                <button type="button" onclick="togglePassword()" class="absolute right-6 top-4 text-[10px] font-black uppercase text-slate-400 hover:text-indigo-600 transition-colors">
+                                    <span id="eye-icon">Tampilkan</span>
+                                </button>
+                            </div>
+                            @error('password')
+                                <p class="text-rose-500 text-[10px] font-bold mt-2 ml-2 uppercase italic tracking-wider">{{ $message }}</p>
+                            @enderror
+                        </div>
 
                         {{-- Tombol Navigasi & Aksi --}}
                         <div class="flex items-center justify-end space-x-4 pt-4">
@@ -144,4 +116,19 @@ function togglePassword() {
             </div>
         </div>
     </div>
+
+    <script>
+    function togglePassword() {
+        const passInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eye-icon');
+        
+        if (passInput.type === 'password') {
+            passInput.type = 'text';
+            eyeIcon.innerText = 'Sembunyikan';
+        } else {
+            passInput.type = 'password';
+            eyeIcon.innerText = 'Tampilkan';
+        }
+    }
+    </script>
 </x-app-layout>

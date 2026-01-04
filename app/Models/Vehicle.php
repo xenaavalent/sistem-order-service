@@ -5,19 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Customer extends Model
+class Vehicle extends Model
 {
     use HasFactory;
 
+    // Menentukan kolom mana saja yang boleh diisi (Mass Assignment)
     protected $fillable = [
         'user_id', 
-        'name', 
-        'email',
-        'phone', 
-        'vehicle_brand', 
-        'vehicle_type', 
+        'plate_number', 
+        'motor_type'
     ];
 
+    /**
+     * Relasi ke User (Satu kendaraan dimiliki oleh satu User)
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -25,11 +26,6 @@ class Customer extends Model
 
     public function serviceOrders()
     {
-        return $this->hasMany(ServiceOrder::class, 'customer_id');
-    }
-
-    public function vehicles()
-    {
-        return $this->hasMany(Vehicle::class, 'user_id'); // sesuaikan kolom foreign key-nya
+        return $this->hasMany(ServiceOrder::class);
     }
 }
